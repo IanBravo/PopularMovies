@@ -20,13 +20,19 @@
             </intent-filter>
         </activity>
         <activity android:name=".MovieDetailsActivity">
-            <meta-data android:name="android.support.PARENT_ACTIVITY" android:value=".MainActivity" />
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".MainActivity" />
         </activity>
+
         <provider
-            android:authorities="com.example.android.popularmovies.app"
             android:name=".Data.MovieProvider"
+            android:authorities="com.example.android.popularmovies.app"
             android:exported="false"
-            android:syncable="true"/>
+            android:syncable="true" />
+
+        <activity android:name=".ReviewsActivity">
+        </activity>
     </application>
 
 </manifest>

@@ -47,7 +47,7 @@ public class NetworkUtilities
                 break;
 
             case MOVIE_REVIEW:
-                Uri.parse(MOVIES_QUERY_URL + movieID + "/" + MOVIE_REVIEW + API_KEY + MOVIE_REVIEW_LANGUAGE);
+                uri = Uri.parse(MOVIES_QUERY_URL + movieID + "/" + MOVIE_REVIEW + API_KEY + MOVIE_REVIEW_LANGUAGE);
                 break;
 
             default:

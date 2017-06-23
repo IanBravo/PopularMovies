@@ -13,10 +13,9 @@ public final class JsonUtilities
 {
     public static MovieData[] getArrangedMovieData(String movieJsonString) throws JSONException
     {
-        MovieData[] moviesData= null;
         JSONObject moviesJson = new JSONObject(movieJsonString);
         JSONArray moviesArray = moviesJson.getJSONArray("results");
-        moviesData = new MovieData[moviesArray.length()];
+        MovieData[] moviesData = new MovieData[moviesArray.length()];
 
         for (int i = 0; i < moviesArray.length(); i++)
         {
@@ -46,5 +45,21 @@ public final class JsonUtilities
             trailerData[i] = new MovieTrailerData(id, name);
         }
         return trailerData;
+    }
+
+    public static String[] getReviewsData(String reviewsJson) throws JSONException
+    {
+        JSONObject moviesJson = new JSONObject(reviewsJson);
+        JSONArray moviesArray = moviesJson.getJSONArray("results");
+        String[] reviewsData = new String[moviesArray.length()];
+
+        for (int i = 0; i < moviesArray.length(); i++)
+        {
+            String author = moviesArray.getJSONObject(i).getString("author");
+            String review = moviesArray.getJSONObject(i).getString("content");
+
+            reviewsData[i] = "Author: " + author + "\n\n" + review;
+        }
+        return reviewsData;
     }
 }

@@ -11,6 +11,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.view.View;
 import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -35,7 +36,7 @@ public class MovieDetailsActivity extends AppCompatActivity implements TrailersA
     private TrailersAdapter mTrailerAdapter;
     private RecyclerView mRecyclerView;
     private TextView mTitleDisplay, mPlotDisplay, mRatingDisplay,mReleaseDateDisplay, mTrailerDisplay;
-    private ImageView mPosterDisplay;
+    private ImageView mPosterDisplay, mReviewsDisplay;
     private ToggleButton mToggleButton;
     private String[] movieData = null;
 
@@ -58,6 +59,7 @@ public class MovieDetailsActivity extends AppCompatActivity implements TrailersA
         mReleaseDateDisplay = (TextView) findViewById(R.id.tv_movie_releaseDate);
         mTrailerDisplay = (TextView) findViewById(R.id.tv_trailer_info);
         mPosterDisplay = (ImageView) findViewById(R.id.im_movie_poster);
+        mReviewsDisplay = (ImageView) findViewById(R.id.iv_reviews);
         mToggleButton = (ToggleButton) findViewById(R.id.toggle_favorite);
 
         loadIntentData();
@@ -75,6 +77,18 @@ public class MovieDetailsActivity extends AppCompatActivity implements TrailersA
                 }
             }
         });
+
+        mReviewsDisplay.setOnClickListener(new View.OnClickListener()
+        {
+            @Override
+            public void onClick(View v)
+            {
+                Intent intentToStartDetailActivity = new Intent(MovieDetailsActivity.this, ReviewsActivity.class);
+                intentToStartDetailActivity.putExtra("MovieID", movieData[5]);
+                startActivity(intentToStartDetailActivity);
+            }
+        });
+
         checkIfFavorite();
     }
 

@@ -49,9 +49,7 @@ public class ReviewsActivity extends AppCompatActivity
     public boolean checkForEmptyReview(String[] reviews)
     {
         if (reviews.length > 0)
-        {
             return false;
-        }
         Toast.makeText(this ,"There are no reviews, check back later.", Toast.LENGTH_LONG).show();
         return true;
     }

@@ -2,6 +2,7 @@ package com.example.android.popularmovies;
 
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.graphics.Movie;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -42,12 +43,16 @@ public class MainActivity extends AppCompatActivity
         gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                String[] selectedMovieData = getMovieData(moviesData[position]);
-                Intent intentToStartDetailActivity = new Intent(MainActivity.this, MovieDetailsActivity.class);
-                intentToStartDetailActivity.putExtra("Movie", selectedMovieData);
-                startActivity(intentToStartDetailActivity);
+                startMovieDetailActivity(getMovieData(moviesData[position]));
             }
         });
+    }
+
+    private void startMovieDetailActivity(String[] selectedMovieData)
+    {
+        Intent intentToStartDetailActivity = new Intent(MainActivity.this, MovieDetailsActivity.class);
+        intentToStartDetailActivity.putExtra("Movie", selectedMovieData);
+        startActivity(intentToStartDetailActivity);
     }
 
     private String[] getMovieData(MovieData movieData)
@@ -77,12 +82,58 @@ public class MainActivity extends AppCompatActivity
         {
             LoadMoviesData(MOVIES_POPULAR);
         }
-        else
+        else if (id == R.id.action_sortBy_rated)
         {
             LoadMoviesData(MOVIES_TOP_RATED);
         }
+        else
+        {
+            loadFavorites();
+        }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private void loadFavorites()
+    {
+        Cursor favoritesQuery = getContentResolver().query(MoviesContract.MovieEntry.CONTENT_URI,
+                null,
+                null,
+                null,
+                null);
+
+        if (favoritesQuery.getCount() == 0)
+        {
+            Toast.makeText(getApplicationContext(), "You have no favorite movies.", Toast.LENGTH_LONG).show();
+            return;
+        }
+        displayFavoriteMovies(favoritesQuery);
+    }
+
+    private void displayFavoriteMovies(Cursor favoritesQuery)
+    {
+        MovieData[] data = new MovieData[favoritesQuery.getCount()];
+        int i = 0;
+        while (favoritesQuery.moveToNext())
+        {
+            String originalTitle = favoritesQuery.getString(favoritesQuery.getColumnIndex(MoviesContract.MovieEntry.COLUMN_TITLE));
+            String posterID = favoritesQuery.getString(favoritesQuery.getColumnIndex(MoviesContract.MovieEntry.COLUMN_POSTER_ID));
+            String plotSynopsis = favoritesQuery.getString(favoritesQuery.getColumnIndex(MoviesContract.MovieEntry.COLUMN_PLOT));
+            String userRating = favoritesQuery.getString(favoritesQuery.getColumnIndex(MoviesContract.MovieEntry.COLUMN_RATING));
+            String releaseDate = favoritesQuery.getString(favoritesQuery.getColumnIndex(MoviesContract.MovieEntry.COLUMN_RELEASE));
+            String id = favoritesQuery.getString(favoritesQuery.getColumnIndex(MoviesContract.MovieEntry.COLUMN_MOVIE_ID));
+
+            data[i] = new MovieData(originalTitle, posterID, plotSynopsis, userRating, releaseDate, id);
+            i++;
+        }
+        attachAdapterToGrid(data);
+    }
+
+    public void attachAdapterToGrid(MovieData[] data)
+    {
+        moviesData = data;
+        movieDataAdapter = new MovieDataAdapter(getApplicationContext(), Arrays.asList(moviesData));
+        MainActivity.gridView.setAdapter(movieDataAdapter);
     }
 
     private void LoadMoviesData(String sort)
@@ -128,9 +179,7 @@ public class MainActivity extends AppCompatActivity
         @Override
         protected void onPostExecute(MovieData[] moviesData)
         {
-            MainActivity.moviesData = moviesData;
-            movieDataAdapter = new MovieDataAdapter(getApplicationContext(), Arrays.asList(moviesData));
-            MainActivity.gridView.setAdapter(movieDataAdapter);
+            attachAdapterToGrid(moviesData);
         }
     }
 

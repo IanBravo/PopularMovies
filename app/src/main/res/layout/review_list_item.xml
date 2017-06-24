@@ -8,6 +8,7 @@
         android:layout_height="wrap_content"
         android:padding="16dp"
         android:textSize="20dp"
+        android:textAlignment="gravity"
         android:id="@+id/tv_review"
         style="@style/TextAppearance.AppCompat.Body1" />
     <View

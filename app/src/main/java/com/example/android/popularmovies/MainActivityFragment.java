@@ -23,6 +23,4 @@ public class MainActivityFragment extends Fragment
         MainActivity.gridView = (GridView) rootView.findViewById(R.id.movies_grid);
         return rootView;
     }
-
-
 }

@@ -30,7 +30,6 @@
             android:authorities="com.example.android.popularmovies.app"
             android:exported="false"
             android:syncable="true" />
-
         <activity android:name=".ReviewsActivity">
         </activity>
     </application>

@@ -5,6 +5,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.databinding.DataBindingUtil;
 import android.media.Image;
 import android.net.Uri;
 import android.support.v7.app.AppCompatActivity;
@@ -24,6 +25,7 @@ import com.example.android.popularmovies.Data.MovieTrailerData;
 import com.example.android.popularmovies.Data.MoviesContract;
 import com.example.android.popularmovies.Utilities.JsonUtilities;
 import com.example.android.popularmovies.Utilities.NetworkUtilities;
+import com.example.android.popularmovies.databinding.ActivityMovieDetailsBinding;
 import com.squareup.picasso.Picasso;
 
 import java.net.URL;
@@ -34,37 +36,25 @@ public class MovieDetailsActivity extends AppCompatActivity implements TrailersA
     private static final String YOUTUBE_URL = "http://www.youtube.com/watch?v=";
 
     private TrailersAdapter mTrailerAdapter;
-    private RecyclerView mRecyclerView;
-    private TextView mTitleDisplay, mPlotDisplay, mRatingDisplay,mReleaseDateDisplay, mTrailerDisplay;
-    private ImageView mPosterDisplay, mReviewsDisplay;
-    private ToggleButton mToggleButton;
     private String[] movieData = null;
+
+    ActivityMovieDetailsBinding mBinding;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_movie_details);
-
+        mBinding = DataBindingUtil.setContentView(this, R.layout.activity_movie_details);
         mTrailerAdapter = new TrailersAdapter(this);
 
-        mRecyclerView = (RecyclerView) findViewById(R.id.recyclerview_trailers);
         LinearLayoutManager layoutManager = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
-        mRecyclerView.setLayoutManager(layoutManager);
-        mRecyclerView.setHasFixedSize(true);
-        mRecyclerView.setAdapter(mTrailerAdapter);
-
-        mTitleDisplay = (TextView) findViewById(R.id.tv_movie_title);
-        mPlotDisplay = (TextView) findViewById(R.id.tv_movie_plot);
-        mRatingDisplay = (TextView) findViewById(R.id.tv_movie_rating);
-        mReleaseDateDisplay = (TextView) findViewById(R.id.tv_movie_releaseDate);
-        mTrailerDisplay = (TextView) findViewById(R.id.tv_trailer_info);
-        mPosterDisplay = (ImageView) findViewById(R.id.im_movie_poster);
-        mReviewsDisplay = (ImageView) findViewById(R.id.iv_reviews);
-        mToggleButton = (ToggleButton) findViewById(R.id.toggle_favorite);
+        mBinding.recyclerviewTrailers.setLayoutManager(layoutManager);
+        mBinding.recyclerviewTrailers.setHasFixedSize(true);
+        mBinding.recyclerviewTrailers.setAdapter(mTrailerAdapter);
 
         loadIntentData();
         loadTrailerData();
-        mToggleButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        mBinding.toggleFavorite.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked)
@@ -78,7 +68,7 @@ public class MovieDetailsActivity extends AppCompatActivity implements TrailersA
             }
         });
 
-        mReviewsDisplay.setOnClickListener(new View.OnClickListener()
+        mBinding.ivReviews.setOnClickListener(new View.OnClickListener()
         {
             @Override
             public void onClick(View v)
@@ -135,12 +125,12 @@ public class MovieDetailsActivity extends AppCompatActivity implements TrailersA
             }
             if (movieId.equals(movieData[5]))
             {
-                mToggleButton.setChecked(true);
+                mBinding.toggleFavorite.setChecked(true);
             }
         }
         else
         {
-            mToggleButton.setChecked(false);
+            mBinding.toggleFavorite.setChecked(false);
         }
     }
 
@@ -159,11 +149,11 @@ public class MovieDetailsActivity extends AppCompatActivity implements TrailersA
 
     private void fillWithMovieData()
     {
-        mTitleDisplay.setText(movieData[0]);
-        mPlotDisplay.setText(movieData[2]);
-        mRatingDisplay.setText(movieData[3] + "/10");
-        mReleaseDateDisplay.setText(movieData[4]);
-        Picasso.with(MovieDetailsActivity.this).load(IMAGE_URL + movieData[1]).into(mPosterDisplay);
+        mBinding.tvMovieTitle.setText(movieData[0]);
+        mBinding.tvMoviePlot.setText(movieData[2]);
+        mBinding.tvMovieRating.setText(movieData[3] + "/10");
+        mBinding.tvMovieReleaseDate.setText(movieData[4]);
+        Picasso.with(MovieDetailsActivity.this).load(IMAGE_URL + movieData[1]).into(mBinding.imMoviePoster);
     }
 
     public void insertData()

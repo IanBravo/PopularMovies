@@ -19,7 +19,7 @@ import java.util.Scanner;
 public class NetworkUtilities
 {
     //TODO(1): Insert your TheMovieDB API Key
-    private static final String API_KEY = "?api_key=a91a86399e39a4f1db358b83cbec3ca9";
+    private static final String API_KEY = "?api_key=";
     private static final String MOVIES_QUERY_URL = "http://api.themoviedb.org/3/movie/";
     private static final String MOVIE_POPULAR = "popular";
     private static final String MOVIE_TOP_RATED = "top_rated";

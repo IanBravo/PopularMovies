@@ -8,6 +8,9 @@ import android.database.Cursor;
 import android.databinding.DataBindingUtil;
 import android.media.Image;
 import android.net.Uri;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.AsyncTaskLoader;
+import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
@@ -30,10 +33,16 @@ import com.squareup.picasso.Picasso;
 
 import java.net.URL;
 
-public class MovieDetailsActivity extends AppCompatActivity implements TrailersAdapter.TrailerAdapterOnClickHandler {
+public class MovieDetailsActivity extends AppCompatActivity implements
+        TrailersAdapter.TrailerAdapterOnClickHandler,
+        LoaderManager.LoaderCallbacks<MovieTrailerData[]>
+{
+
     private static final String MOVIE_TRAILERS = "videos";
     private static final String IMAGE_URL = "http://image.tmdb.org/t/p/w780/";
     private static final String YOUTUBE_URL = "http://www.youtube.com/watch?v=";
+    private static final String TRAILERS_QUERY = "query";
+    private static final int TRAILERS_LOADER = 16;
 
     private TrailersAdapter mTrailerAdapter;
     private String[] movieData = null;
@@ -79,7 +88,10 @@ public class MovieDetailsActivity extends AppCompatActivity implements TrailersA
             }
         });
 
-        checkIfFavorite();
+        if (checkIfFavorite())
+            mBinding.toggleFavorite.setChecked(true);
+        else
+            mBinding.toggleFavorite.setChecked(false);
     }
 
     @Override
@@ -100,10 +112,10 @@ public class MovieDetailsActivity extends AppCompatActivity implements TrailersA
 
     private void loadTrailerData()
     {
-        new FetchTrailersTask().execute();
+        getSupportLoaderManager().initLoader(TRAILERS_LOADER, null, this);
     }
 
-    private void checkIfFavorite()
+    private boolean checkIfFavorite()
     {
         String[] mProjection = {MoviesContract.MovieEntry.COLUMN_MOVIE_ID};
         String mSelectionClause = MoviesContract.MovieEntry.COLUMN_MOVIE_ID + "=?";
@@ -120,18 +132,15 @@ public class MovieDetailsActivity extends AppCompatActivity implements TrailersA
             int index = cursor.getColumnIndex(MoviesContract.MovieEntry.COLUMN_MOVIE_ID);
             String movieId = "";
             while (cursor.moveToNext())
-            {
                 movieId = cursor.getString(index);
-            }
             if (movieId.equals(movieData[5]))
-            {
-                mBinding.toggleFavorite.setChecked(true);
-            }
+                return true;
         }
         else
         {
-            mBinding.toggleFavorite.setChecked(false);
+            return false;
         }
+        return false;
     }
 
     private void loadIntentData()
@@ -158,8 +167,11 @@ public class MovieDetailsActivity extends AppCompatActivity implements TrailersA
 
     public void insertData()
     {
-        ContentValues movieInformation = prepareForInsert();
-        getContentResolver().insert(MoviesContract.MovieEntry.CONTENT_URI, movieInformation);
+        if (!checkIfFavorite())
+        {
+            ContentValues movieInformation = prepareForInsert();
+            getContentResolver().insert(MoviesContract.MovieEntry.CONTENT_URI, movieInformation);
+        }
     }
 
     private ContentValues prepareForInsert()
@@ -184,33 +196,51 @@ public class MovieDetailsActivity extends AppCompatActivity implements TrailersA
         Toast.makeText(getApplicationContext() ,"Error Fetching Trailer Data", Toast.LENGTH_LONG).show();
     }
 
-    public class FetchTrailersTask extends AsyncTask<Void, Void, MovieTrailerData[]>
+    @Override
+    public Loader<MovieTrailerData[]> onCreateLoader(int id, final Bundle args)
     {
-        @Override
-        protected MovieTrailerData[] doInBackground(Void... params)
+        return new AsyncTaskLoader<MovieTrailerData[]>(this)
         {
-            URL trailersRequestUrl = NetworkUtilities.buildMoviesURL(MOVIE_TRAILERS, movieData[5]);
-            try
+            @Override
+            protected void onStartLoading()
             {
-                String rawTrailersJson = NetworkUtilities.getResponseFromHttpUrl(trailersRequestUrl);
-                MovieTrailerData[] trailersData = JsonUtilities.getTrailersData(rawTrailersJson);
-                return trailersData;
+                super.onStartLoading();
+                forceLoad();
             }
-            catch (Exception e)
-            {
-                e.printStackTrace();
-                return null;
-            }
-        }
 
-        @Override
-        protected void onPostExecute(MovieTrailerData[] data)
-        {
-            if (data != null)
-                mTrailerAdapter.setTrailerData(data);
-            else
-                showErrorMessage();
-            super.onPostExecute(data);
-        }
+            @Override
+            public MovieTrailerData[] loadInBackground()
+            {
+                URL trailersRequestUrl = NetworkUtilities.buildMoviesURL(MOVIE_TRAILERS, movieData[5]);
+                try
+                {
+                    String rawTrailersJson = NetworkUtilities.getResponseFromHttpUrl(trailersRequestUrl);
+                    MovieTrailerData[] trailersData = JsonUtilities.getTrailersData(rawTrailersJson);
+                    return trailersData;
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                    return null;
+                }
+            }
+        };
+    }
+
+    @Override
+    public void onLoadFinished(Loader<MovieTrailerData[]> loader, MovieTrailerData[] data)
+    {
+        if (data != null)
+            mTrailerAdapter.setTrailerData(data);
+        else
+            showErrorMessage();
+    }
+
+    @Override
+    public void onLoaderReset(Loader<MovieTrailerData[]> loader) {}
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
     }
 }

@@ -7,6 +7,9 @@ import android.graphics.Movie;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.AsyncTaskLoader;
+import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.Menu;
@@ -24,13 +27,19 @@ import java.net.URL;
 import java.util.Arrays;
 
 
-public class MainActivity extends AppCompatActivity
+public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<MovieData[]>
 {
     private static final String MOVIES_POPULAR = "popular";
     private static final String MOVIES_TOP_RATED = "top_rated";
+    private static final String MOVIES_FAVORITE = "favorites";
+    private static final String MOVIES_QUERY = "query";
     private static final String NO_MOVIE_ID = "";
+    private static final int MOVIES_LOADER = 12;
+
+    private static String movieListToLoad = "popular";
 
     private MovieDataAdapter movieDataAdapter;
+
     public static MovieData[] moviesData;
     public static GridView gridView;
 
@@ -39,13 +48,30 @@ public class MainActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        LoadMoviesData(MOVIES_POPULAR);
         gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 startMovieDetailActivity(getMovieData(moviesData[position]));
             }
         });
+
+        if (savedInstanceState != null)
+        {
+            movieListToLoad = savedInstanceState.getString(MOVIES_QUERY);
+            if (movieListToLoad.equals(MOVIES_POPULAR))
+                LoadMoviesData(MOVIES_POPULAR);
+            else if (movieListToLoad.equals(MOVIES_TOP_RATED))
+                LoadMoviesData(MOVIES_TOP_RATED);
+            else
+                loadFavorites();
+        }
+        else
+        {
+            if (movieListToLoad.equals(MOVIES_FAVORITE))
+                loadFavorites();
+            else
+                LoadMoviesData(movieListToLoad);
+        }
     }
 
     private void startMovieDetailActivity(String[] selectedMovieData)
@@ -78,18 +104,13 @@ public class MainActivity extends AppCompatActivity
     public boolean onOptionsItemSelected(MenuItem item)
     {
         int id = item.getItemId();
+
         if (id == R.id.action_sortBy_popularity)
-        {
             LoadMoviesData(MOVIES_POPULAR);
-        }
         else if (id == R.id.action_sortBy_rated)
-        {
             LoadMoviesData(MOVIES_TOP_RATED);
-        }
         else
-        {
             loadFavorites();
-        }
 
         return super.onOptionsItemSelected(item);
     }
@@ -107,6 +128,7 @@ public class MainActivity extends AppCompatActivity
             Toast.makeText(getApplicationContext(), "You have no favorite movies.", Toast.LENGTH_LONG).show();
             return;
         }
+        movieListToLoad = MOVIES_FAVORITE;
         displayFavoriteMovies(favoritesQuery);
     }
 
@@ -140,47 +162,73 @@ public class MainActivity extends AppCompatActivity
     {
         ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         if (NetworkUtilities.isOnline(connectivityManager))
-        {
-            new FetchMoviesTask().execute(sort);
-        }
+            executeLoader(sort);
         else
-        {
             Toast.makeText(getApplicationContext() ,"No network connection, please try again.", Toast.LENGTH_LONG).show();
-        }
     }
 
-    public class FetchMoviesTask extends AsyncTask<String, Void, MovieData[]>
+    private void executeLoader(String sort)
     {
-        @Override
-        protected MovieData[] doInBackground(String... params)
-        {
-            URL moviesRequestUrl;
-            if (params[0].equals(MOVIES_POPULAR))
-            {
-                moviesRequestUrl  = NetworkUtilities.buildMoviesURL(MOVIES_POPULAR, NO_MOVIE_ID);
-            }
-            else
-            {
-                moviesRequestUrl  = NetworkUtilities.buildMoviesURL(MOVIES_TOP_RATED, NO_MOVIE_ID);
-            }
-            try
-            {
-                String response = NetworkUtilities.getResponseFromHttpUrl(moviesRequestUrl);
-                MovieData[] arrangedMovieData = JsonUtilities.getArrangedMovieData(response);
-                return arrangedMovieData;
-            }
-            catch (Exception e)
-            {
-                e.printStackTrace();
-                return null;
-            }
-        }
-
-        @Override
-        protected void onPostExecute(MovieData[] moviesData)
-        {
-            attachAdapterToGrid(moviesData);
-        }
+        Bundle queryBundle = new Bundle();
+        movieListToLoad = sort;
+        queryBundle.putString(MOVIES_QUERY, sort);
+        LoaderManager loaderManager = getSupportLoaderManager();
+        Loader<MovieData[]> moviesSearchLoader = loaderManager.getLoader(MOVIES_LOADER);
+        if (moviesSearchLoader == null)
+            loaderManager.initLoader(MOVIES_LOADER, queryBundle, this);
+        else
+            loaderManager.restartLoader(MOVIES_LOADER, queryBundle, this);
     }
 
+
+    @Override
+    public Loader<MovieData[]> onCreateLoader(int id, final Bundle args)
+    {
+        return new AsyncTaskLoader<MovieData[]>(this)
+        {
+            @Override
+            protected void onStartLoading()
+            {
+                super.onStartLoading();
+                if (args == null)
+                    return;
+                forceLoad();
+            }
+
+            @Override
+            public MovieData[] loadInBackground()
+            {
+                URL moviesRequestUrl = (args.getString(MOVIES_QUERY).equals(MOVIES_POPULAR)) ?
+                        NetworkUtilities.buildMoviesURL(MOVIES_POPULAR, NO_MOVIE_ID) :
+                        NetworkUtilities.buildMoviesURL(MOVIES_TOP_RATED, NO_MOVIE_ID);
+                try
+                {
+                    String response = NetworkUtilities.getResponseFromHttpUrl(moviesRequestUrl);
+                    MovieData[] arrangedMovieData = JsonUtilities.getArrangedMovieData(response);
+                    return arrangedMovieData;
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                    return null;
+                }
+            }
+        };
+    }
+
+    @Override
+    public void onLoadFinished(Loader<MovieData[]> loader, MovieData[] data)
+    {
+        attachAdapterToGrid(data);
+    }
+
+    @Override
+    public void onLoaderReset(Loader<MovieData[]> loader) {}
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState)
+    {
+        super.onSaveInstanceState(outState);
+        outState.putString(MOVIES_QUERY, movieListToLoad);
+    }
 }

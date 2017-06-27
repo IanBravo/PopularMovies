@@ -37,8 +37,6 @@ public class MoviesDBHelper extends SQLiteOpenHelper
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion)
     {
-        db.execSQL("DROP TABLE IF EXISTS " + MoviesContract.MovieEntry.TABLE_FAVORITE_MOVIES);
-        db.execSQL("DELETE FROM SQLITE_SEQUENCE WHERE NAME = '" + MoviesContract.MovieEntry.TABLE_FAVORITE_MOVIES + "'");
-        onCreate(db);
+
     }
 }
